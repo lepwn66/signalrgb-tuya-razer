@@ -28,36 +28,32 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
-        // High-resolution grid: 20 wide x 12 tall
-        // 20 LEDs: 5 left + 10 top + 5 right
+        // Grid: 22 wide x 11 tall
+        // 40 LEDs: 10 left + 20 top + 10 right
+        // Placed at consecutive integer coordinates so they tile with no gaps.
         //
-        //   L5  T1 T2 T3 T4 T5 T6 T7 T8 T9 T10  R1
-        //   L4                                     R2
-        //   L3                                     R3
-        //   L2                                     R4
-        //   L1                                     R5
-        //
-        const W = 19; // max x index (grid is 20 wide: 0-19)
-        const H = 11; // max y index (grid is 12 tall: 0-11)
+        // Left column: x=0, y=10 down to y=1  (10 LEDs)
+        // Top row:     y=0, x=1 through x=20  (20 LEDs)
+        // Right column: x=21, y=1 up to y=10  (10 LEDs)
 
         const positions = [];
 
-        // Left column (5 LEDs): bottom to top at x=0
-        for (let i = 0; i < 5; i++)
-        {
-            positions.push([0, H - Math.round(i * H / 4)]);
-        }
-
-        // Top row (10 LEDs): left to right at y=0
+        // Left column (10 LEDs): bottom to top at x=0
         for (let i = 0; i < 10; i++)
         {
-            positions.push([Math.round((i + 1) * W / 11), 0]);
+            positions.push([0, 10 - i]);
         }
 
-        // Right column (5 LEDs): top to bottom at x=W
-        for (let i = 0; i < 5; i++)
+        // Top row (20 LEDs): left to right at y=0
+        for (let i = 0; i < 20; i++)
         {
-            positions.push([W, Math.round(i * H / 4)]);
+            positions.push([1 + i, 0]);
+        }
+
+        // Right column (10 LEDs): top to bottom at x=21
+        for (let i = 0; i < 10; i++)
+        {
+            positions.push([21, 1 + i]);
         }
 
         return positions;
@@ -66,14 +62,14 @@ export default class TuyaVirtualDevice extends BaseClass
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = 20; // 20 addressable segments
+        this.ledCount = 40; // 40 addressable segments
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([20, 12]); // high-resolution grid for precise color sampling
+        device.setSize([22, 11]); // grid sized to exactly fit the U-shape with no gaps
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
@@ -140,7 +136,7 @@ export default class TuyaVirtualDevice extends BaseClass
                 );
             }
 
-            // Each LED gets its own unique segment tag (01, 02, ... 14)
+            // Each LED gets its own unique segment tag
             let colorString = '';
             for (let i = 1; i <= numLeds; i++)
             {
