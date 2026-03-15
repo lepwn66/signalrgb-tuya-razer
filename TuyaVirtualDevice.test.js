@@ -25,12 +25,10 @@ export default class TuyaVirtualDevice extends BaseClass
         }
         return ledNames;
     }
-
 getLedPositions()
 {
-    // Inverted U: bottom-left up, top left to right, down to bottom-right
     return [
-        [0, 2], [0, 1], [0, 0], // left column, bottom to top
+        [0, 3], [0, 2], [0, 1], // left column, bottom to top
         [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], // top row, left to right
         [5, 1], [5, 2], [5, 3]  // right column, top to bottom
     ];
@@ -46,7 +44,7 @@ setupDevice(tuyaDevice)
 
     device.setName(tuyaDevice.getName());
 
-    device.setSize([6, 3]); // U-shape bounding box: 5 wide, 3 tall
+    device.setSize([6, 4]); // U-shape bounding box: 5 wide, 3 tall
     device.setControllableLeds(this.ledNames, this.ledPositions);
 }
 
