@@ -112,7 +112,7 @@ export default class TuyaVirtualDevice extends BaseClass
 
             let spliceNumHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
             let countHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
-            let colorValue = '0004' + colorArray.join('') + spliceNumHex + colorString;
+            let colorValue = '000c' + colorArray.join('') + spliceNumHex + colorString;
             return colorValue;
         }
     }
