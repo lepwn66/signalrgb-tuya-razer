@@ -28,31 +28,31 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
-        // Grid: 16 wide x 8 tall
-        // 28 LEDs: 7 left + 14 top + 7 right
+        // Grid: 12 wide x 6 tall
+        // 20 LEDs: 5 left + 10 top + 5 right
         //
-        // Left column: x=0, y=7 down to y=1  (7 LEDs)
-        // Top row:     y=0, x=1 through x=14  (14 LEDs)
-        // Right column: x=15, y=1 down to y=7  (7 LEDs)
+        // Left column: x=0, y=5 down to y=1  (5 LEDs)
+        // Top row:     y=0, x=1 through x=10  (10 LEDs)
+        // Right column: x=11, y=1 down to y=5  (5 LEDs)
 
         const positions = [];
 
-        // Left column (7 LEDs): bottom to top at x=0
-        for (let i = 0; i < 7; i++)
+        // Left column (5 LEDs): bottom to top at x=0
+        for (let i = 0; i < 5; i++)
         {
-            positions.push([0, 7 - i]);
+            positions.push([0, 5 - i]);
         }
 
-        // Top row (14 LEDs): left to right at y=0
-        for (let i = 0; i < 14; i++)
+        // Top row (10 LEDs): left to right at y=0
+        for (let i = 0; i < 10; i++)
         {
             positions.push([1 + i, 0]);
         }
 
-        // Right column (7 LEDs): top to bottom at x=15
-        for (let i = 0; i < 7; i++)
+        // Right column (5 LEDs): top to bottom at x=11
+        for (let i = 0; i < 5; i++)
         {
-            positions.push([15, 1 + i]);
+            positions.push([11, 1 + i]);
         }
 
         return positions;
@@ -61,14 +61,14 @@ export default class TuyaVirtualDevice extends BaseClass
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = 28;
+        this.ledCount = 20;
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([16, 8]);
+        device.setSize([12, 6]);
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
@@ -128,13 +128,16 @@ export default class TuyaVirtualDevice extends BaseClass
             for (let color of colors)
             {
                 const [h,s,v] = this.rgbToHsv(color);
+                // Compact encoding: H=2bytes, S=1byte(/10), V=1byte(/10)
+                // Same format as the single-color path
                 colorArray.push(
                     this.getW32FromHex(h.toString(16), 2).toString(Hex) +
-                    this.getW32FromHex(s.toString(16), 2).toString(Hex) +
-                    this.getW32FromHex(v.toString(16), 2).toString(Hex)
+                    this.getW32FromHex(parseInt(s / 10).toString(16), 1).toString(Hex) +
+                    this.getW32FromHex(parseInt(v / 10).toString(16), 1).toString(Hex)
                 );
             }
 
+            // Each LED gets its own unique segment tag
             let colorString = '';
             for (let i = 1; i <= numLeds; i++)
             {
