@@ -143,17 +143,12 @@ export default class TuyaVirtualDevice extends BaseClass
                 );
             }
 
+            // Each LED gets its own unique segment tag (01, 02, 03, ... 0c)
+            // so the device addresses them individually instead of in groups
             let colorString = '';
-
-            for(let i = 1; i <= this.tuyaLeds.length; i++)
+            for (let i = 1; i <= this.tuyaLeds.length; i++)
             {
-                if (i <= 4) {
-                    colorString += '01';
-                } else if (i <= 8) {
-                    colorString += '02';
-                } else if (i <= 12) {
-                    colorString += '03';
-                }
+                colorString += this.getW32FromHex(i.toString(16), 1).toString(Hex);
             }
 
             // Use actual color count for the count prefix
