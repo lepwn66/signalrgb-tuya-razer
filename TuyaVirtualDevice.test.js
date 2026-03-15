@@ -97,8 +97,8 @@ export default class TuyaVirtualDevice extends BaseClass
                 const [h,s,v] = this.rgbToHsv(color);
                 colorArray.push(
                     this.getW32FromHex(h.toString(16), 2).toString(Hex) +
-                    this.getW32FromHex(parseInt(s / 10).toString(16), 1).toString(Hex) +
-                    this.getW32FromHex(parseInt(v / 10).toString(16), 1).toString(Hex)
+                    this.getW32FromHex(s.toString(16), 2).toString(Hex) +
+                    this.getW32FromHex(v.toString(16), 2).toString(Hex)
                 );
             }
 
