@@ -29,43 +29,44 @@ export default class TuyaVirtualDevice extends BaseClass
     getLedPositions()
     {
         // High-resolution grid: 20 wide x 12 tall
-        // LEDs placed at precise points along the U-shape perimeter
-        // so each LED samples a small canvas area instead of a huge block.
+        // 20 LEDs: 5 left + 10 top + 5 right
         //
-        // Layout (3 left + 6 top + 3 right = 12 LEDs):
-        //
-        //   L3  T1  T2  T3  T4  T5  T6  R1
-        //   L2                          R2
-        //   L1                          R3
+        //   L5  T1 T2 T3 T4 T5 T6 T7 T8 T9 T10  R1
+        //   L4                                     R2
+        //   L3                                     R3
+        //   L2                                     R4
+        //   L1                                     R5
         //
         const W = 19; // max x index (grid is 20 wide: 0-19)
         const H = 11; // max y index (grid is 12 tall: 0-11)
 
-        return [
-            // Left column (3 LEDs): bottom to top at x=0
-            [0, H],                         // L1 - bottom-left
-            [0, Math.round(H / 2)],         // L2 - mid-left
-            [0, 0],                         // L3 - top-left corner
+        const positions = [];
 
-            // Top row (6 LEDs): left to right at y=0
-            [Math.round(W * 1/7), 0],       // T1
-            [Math.round(W * 2/7), 0],       // T2
-            [Math.round(W * 3/7), 0],       // T3
-            [Math.round(W * 4/7), 0],       // T4
-            [Math.round(W * 5/7), 0],       // T5
-            [Math.round(W * 6/7), 0],       // T6
+        // Left column (5 LEDs): bottom to top at x=0
+        for (let i = 0; i < 5; i++)
+        {
+            positions.push([0, H - Math.round(i * H / 4)]);
+        }
 
-            // Right column (3 LEDs): top to bottom at x=W
-            [W, 0],                         // R1 - top-right corner
-            [W, Math.round(H / 2)],         // R2 - mid-right
-            [W, H],                         // R3 - bottom-right
-        ];
+        // Top row (10 LEDs): left to right at y=0
+        for (let i = 0; i < 10; i++)
+        {
+            positions.push([Math.round((i + 1) * W / 11), 0]);
+        }
+
+        // Right column (5 LEDs): top to bottom at x=W
+        for (let i = 0; i < 5; i++)
+        {
+            positions.push([W, Math.round(i * H / 4)]);
+        }
+
+        return positions;
     }
 
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = this.tuyaLeds.length; // use actual LED count (12), no artificial cap
+        this.ledCount = 20; // 20 addressable segments
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
@@ -95,10 +96,7 @@ export default class TuyaVirtualDevice extends BaseClass
                     break;
             }
 
-            // Maybe this should be in the TuyaDevice
             let colorString = this.generateColorString(RGBData);
-
-            // Maybe this should be done by a global controller
             this.tuyaDevice.sendColors(colorString);
         }
     }
@@ -118,10 +116,9 @@ export default class TuyaVirtualDevice extends BaseClass
 
     generateColorString(colors)
     {
-        let spliceLength = this.tuyaLeds.length;
-        if (colors.length == 1) spliceLength = 1;
+        const numLeds = colors.length;
 
-        if (spliceLength === 1)
+        if (numLeds === 1)
         {
             const [h1,s1,v1] = this.rgbToHsv(colors[0]);
             let color = this.getW32FromHex(h1.toString(16), 2).toString(Hex) +
@@ -143,17 +140,15 @@ export default class TuyaVirtualDevice extends BaseClass
                 );
             }
 
-            // Each LED gets its own unique segment tag (01, 02, 03, ... 0c)
-            // so the device addresses them individually instead of in groups
+            // Each LED gets its own unique segment tag (01, 02, ... 14)
             let colorString = '';
-            for (let i = 1; i <= this.tuyaLeds.length; i++)
+            for (let i = 1; i <= numLeds; i++)
             {
                 colorString += this.getW32FromHex(i.toString(16), 1).toString(Hex);
             }
 
-            // Use actual color count for the count prefix
-            let countHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
-            let spliceNumHex = this.getW32FromHex(spliceLength.toString(16), 2).toString(Hex);
+            let countHex = this.getW32FromHex(numLeds.toString(16), 2).toString(Hex);
+            let spliceNumHex = this.getW32FromHex(numLeds.toString(16), 2).toString(Hex);
             let colorValue = countHex + colorArray.join('') + spliceNumHex + colorString;
 
             return colorValue;
