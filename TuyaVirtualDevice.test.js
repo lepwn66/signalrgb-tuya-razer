@@ -26,30 +26,29 @@ export default class TuyaVirtualDevice extends BaseClass
         return ledNames;
     }
 
-    getLedPositions()
-    {
-        let ledPositions = [];
-        for (let i = 0; i < this.ledCount; i++)
-        {
-            ledPositions.push([i, 0]);
-        }
-        return ledPositions;
-    }
+getLedPositions()
+{
+    // Inverted U: bottom-left up, top left to right, down to bottom-right
+    return [
+        [0, 2], [0, 1], [0, 0], // left column, bottom to top
+        [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], // top row, left to right
+        [5, 1], [5, 2], [5, 3]  // right column, top to bottom
+    ];
+}
 
-    setupDevice(tuyaDevice)
-    {
-        this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = (this.tuyaLeds.length > 4) ? 4 : this.tuyaLeds.length;
+setupDevice(tuyaDevice)
+{
+    this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
+    this.ledCount = Math.min(this.tuyaLeds.length, 11); // expanded from 4 to 11
 
-        this.ledNames = this.getLedNames();
-        this.ledPositions = this.getLedPositions();
+    this.ledNames = this.getLedNames();
+    this.ledPositions = this.getLedPositions();
 
-        device.setName(tuyaDevice.getName());
+    device.setName(tuyaDevice.getName());
 
-        device.setSize([this.ledCount, 1]);
-        // device.setScale(1);
-        device.setControllableLeds(this.ledNames, this.ledPositions);
-    }
+    device.setSize([6, 3]); // U-shape bounding box: 5 wide, 3 tall
+    device.setControllableLeds(this.ledNames, this.ledPositions);
+}
 
     render(lightingMode, forcedColor, now)
     {
@@ -92,54 +91,52 @@ export default class TuyaVirtualDevice extends BaseClass
         return RGBData;
     }
 
-    generateColorString(colors)
+
+generateColorString(colors)
+{
+    let spliceLength = this.tuyaLeds.length;
+    if (colors.length == 1) spliceLength = 1;
+
+    if (spliceLength === 1)
     {
-        let spliceLength = this.tuyaLeds.length;
-        if (colors.length == 1) spliceLength = 1;
+        const [h1,s1,v1] = this.rgbToHsv(colors[0]);
+        let color = this.getW32FromHex(h1.toString(16), 2).toString(Hex) +
+                    this.getW32FromHex(parseInt(s1 / 10).toString(16), 1).toString(Hex) +
+                    this.getW32FromHex(parseInt(v1 / 10).toString(16), 1).toString(Hex);
 
-        if (spliceLength === 1)
+        return color + "00000100";
+    } else
+    {
+        let colorArray = [];
+
+        for (let color of colors)
         {
-            const [h1,s1,v1] = this.rgbToHsv(colors[0]);
-            let color = this.getW32FromHex(h1.toString(16), 2).toString(Hex) +
-                        this.getW32FromHex(parseInt(s1 / 10).toString(16), 1).toString(Hex) +
-                        this.getW32FromHex(parseInt(v1 / 10).toString(16), 1).toString(Hex);
-
-            return color + "00000100";
-        } else
-        {
-            let colorArray = [];
-
-            for (let color of colors)
-            {
-                const [h,s,v] = this.rgbToHsv(color);
-                colorArray.push(
-                    this.getW32FromHex(h.toString(16), 2).toString(Hex) +
-                    this.getW32FromHex(s.toString(16), 2).toString(Hex) +
-                    this.getW32FromHex(v.toString(16), 2).toString(Hex)
-                );
-            }
-
-            let colorString = '';
-
-            for(let i = 1; i <= this.tuyaLeds.length; i++)
-            {
-                // colorString += this.zeroPad(i, 2);
-                if (i <= 4) {
-                    colorString += '01';
-                } else if (i <= 8) {
-                    colorString += '02';
-                } else if (i <= 12) {
-                    colorString += '03';
-                } else if (i <= 16) {
-                    colorString += '04';
-                }
-            }
-    
-            let spliceNumHex = this.getW32FromHex(spliceLength.toString(16), 2).toString(Hex);
-            let colorValue = '0004' + colorArray.join('') + spliceNumHex + colorString;
-    
-            return colorValue;
+            const [h,s,v] = this.rgbToHsv(color);
+            colorArray.push(
+                this.getW32FromHex(h.toString(16), 2).toString(Hex) +
+                this.getW32FromHex(s.toString(16), 2).toString(Hex) +
+                this.getW32FromHex(v.toString(16), 2).toString(Hex)
+            );
         }
-        
+
+        let colorString = '';
+
+        for(let i = 1; i <= this.tuyaLeds.length; i++)
+        {
+            if (i <= 4) {
+                colorString += '01';
+            } else if (i <= 8) {
+                colorString += '02';
+            } else if (i <= 12) {
+                colorString += '03';
+            }
+            // extended to cover up to 12 LEDs (was stopping at 16 but only had 4 defined)
+        }
+
+        let spliceNumHex = this.getW32FromHex(spliceLength.toString(16), 2).toString(Hex);
+        let colorValue = '0004' + colorArray.join('') + spliceNumHex + colorString;
+
+        return colorValue;
     }
+}
 }
