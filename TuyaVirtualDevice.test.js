@@ -27,9 +27,9 @@ export default class TuyaVirtualDevice extends BaseClass
     getLedPositions()
     {
         return [
-            [0, 3], [0, 2], [0, 1],             // left column, bottom to top
-            [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], // top row, left to right
-            [6, 1], [6, 2], [6, 3]              // right column, top to bottom
+            [0, 7], [0, 5], [0, 2],                    // left column, bottom to top
+            [0, 0], [3, 0], [5, 0], [7, 0], [9, 0], [13, 0], // top row, left to right
+            [13, 2], [13, 5], [13, 7]                  // right column, top to bottom
         ];
     }
 
@@ -40,7 +40,7 @@ export default class TuyaVirtualDevice extends BaseClass
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
         device.setName(tuyaDevice.getName());
-        device.setSize([7, 4]);
+        device.setSize([14, 8]);
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
