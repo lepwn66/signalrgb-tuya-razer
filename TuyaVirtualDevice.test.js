@@ -28,47 +28,50 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
-        // Grid: 12 wide x 6 tall
-        // 20 LEDs: 5 left + 10 top + 5 right
-        //
-        // Left column: x=0, y=5 down to y=1  (5 LEDs)
-        // Top row:     y=0, x=1 through x=10  (10 LEDs)
-        // Right column: x=11, y=1 down to y=5  (5 LEDs)
+        // High-res grid: 20 wide x 10 tall
+        // 12 LEDs in 4 quarters of 3:
+        //   Q1: Left column   (3 LEDs) - bottom, mid, top-left corner
+        //   Q2: Top-left half (3 LEDs) - evenly across left half of top
+        //   Q3: Top-right half(3 LEDs) - evenly across right half of top
+        //   Q4: Right column  (3 LEDs) - top-right corner, mid, bottom
 
-        const positions = [];
+        const W = 19;
+        const H = 9;
 
-        // Left column (5 LEDs): bottom to top at x=0
-        for (let i = 0; i < 5; i++)
-        {
-            positions.push([0, 5 - i]);
-        }
+        return [
+            // Q1: Left column - bottom to top
+            [0, H],                          // bottom-left
+            [0, Math.round(H / 2)],          // mid-left
+            [0, 0],                          // top-left corner
 
-        // Top row (10 LEDs): left to right at y=0
-        for (let i = 0; i < 10; i++)
-        {
-            positions.push([1 + i, 0]);
-        }
+            // Q2: Top-left half
+            [Math.round(W / 6), 0],          // ~3
+            [Math.round(W * 2/6), 0],        // ~6
+            [Math.round(W * 3/6), 0],        // ~10 (midpoint)
 
-        // Right column (5 LEDs): top to bottom at x=11
-        for (let i = 0; i < 5; i++)
-        {
-            positions.push([11, 1 + i]);
-        }
+            // Q3: Top-right half
+            [Math.round(W * 4/6), 0],        // ~13
+            [Math.round(W * 5/6), 0],        // ~16
+            [W, 0],                          // top-right corner
 
-        return positions;
+            // Q4: Right column - top to bottom
+            [W, Math.round(H / 3)],          // upper-right
+            [W, Math.round(H * 2/3)],        // lower-right
+            [W, H],                          // bottom-right
+        ];
     }
 
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = 20;
+        this.ledCount = 12;
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([12, 6]);
+        device.setSize([20, 10]); // high-res grid for precise sampling
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
@@ -128,12 +131,10 @@ export default class TuyaVirtualDevice extends BaseClass
             for (let color of colors)
             {
                 const [h,s,v] = this.rgbToHsv(color);
-                // Compact encoding: H=2bytes, S=1byte(/10), V=1byte(/10)
-                // Same format as the single-color path
                 colorArray.push(
                     this.getW32FromHex(h.toString(16), 2).toString(Hex) +
-                    this.getW32FromHex(parseInt(s / 10).toString(16), 1).toString(Hex) +
-                    this.getW32FromHex(parseInt(v / 10).toString(16), 1).toString(Hex)
+                    this.getW32FromHex(s.toString(16), 2).toString(Hex) +
+                    this.getW32FromHex(v.toString(16), 2).toString(Hex)
                 );
             }
 
