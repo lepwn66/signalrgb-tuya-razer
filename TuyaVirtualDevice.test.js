@@ -8,12 +8,14 @@ export default class TuyaVirtualDevice extends BaseClass
     constructor(deviceData)
     {
         super();
+        // Initialize tuya device from saved data
         this.tuyaDevice = new TuyaDevice(deviceData, null);
         this.frameDelay = 50;
         this.lastRender = 0;
+
         this.setupDevice(this.tuyaDevice);
     }
-
+    
     getLedNames()
     {
         let ledNames = [];
@@ -23,24 +25,27 @@ export default class TuyaVirtualDevice extends BaseClass
         }
         return ledNames;
     }
-    
+
     getLedPositions()
     {
         return [
-            [0, 7], [0, 5], [0, 2],                    // left column, bottom to top
-            [0, 0], [3, 0], [5, 0], [7, 0], [9, 0], [13, 0], // top row, left to right
-            [13, 2], [13, 5], [13, 7]                  // right column, top to bottom
+            [0, 3], [0, 2], [0, 1],                        // left column (3): bottom to top
+            [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], // top row (6): left to right
+            [5, 1], [5, 2], [5, 3]                          // right column (3): top to bottom
         ];
     }
 
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = Math.min(this.tuyaLeds.length, 12);
+        this.ledCount = this.tuyaLeds.length; // use actual LED count (12), no artificial cap
+
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
+
         device.setName(tuyaDevice.getName());
-        device.setSize([14, 8]);
+
+        device.setSize([6, 4]); // U-shape bounding box: 6 wide, 4 tall
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
@@ -62,7 +67,11 @@ export default class TuyaVirtualDevice extends BaseClass
                     }
                     break;
             }
+
+            // Maybe this should be in the TuyaDevice
             let colorString = this.generateColorString(RGBData);
+
+            // Maybe this should be done by a global controller
             this.tuyaDevice.sendColors(colorString);
         }
     }
@@ -70,28 +79,33 @@ export default class TuyaVirtualDevice extends BaseClass
     getDeviceRGB()
     {
         const RGBData = [];
-        for (let i = 0; i < this.ledPositions.length; i++)
-        {
+    
+        for(let i = 0 ; i < this.ledPositions.length; i++){
             const ledPosition = this.ledPositions[i];
             const color = device.color(ledPosition[0], ledPosition[1]);
             RGBData.push(color);
         }
+    
         return RGBData;
     }
 
     generateColorString(colors)
     {
-        if (colors.length === 1)
+        let spliceLength = this.tuyaLeds.length;
+        if (colors.length == 1) spliceLength = 1;
+
+        if (spliceLength === 1)
         {
             const [h1,s1,v1] = this.rgbToHsv(colors[0]);
             let color = this.getW32FromHex(h1.toString(16), 2).toString(Hex) +
                         this.getW32FromHex(parseInt(s1 / 10).toString(16), 1).toString(Hex) +
                         this.getW32FromHex(parseInt(v1 / 10).toString(16), 1).toString(Hex);
+
             return color + "00000100";
-        }
-        else
+        } else
         {
             let colorArray = [];
+
             for (let color of colors)
             {
                 const [h,s,v] = this.rgbToHsv(color);
@@ -103,18 +117,23 @@ export default class TuyaVirtualDevice extends BaseClass
             }
 
             let colorString = '';
-            for (let i = 1; i <= colors.length; i++)
+
+            for(let i = 1; i <= this.tuyaLeds.length; i++)
             {
-                if (i <= 4)       colorString += '01';
-                else if (i <= 8)  colorString += '02';
-                else if (i <= 12) colorString += '03';
+                if (i <= 4) {
+                    colorString += '01';
+                } else if (i <= 8) {
+                    colorString += '02';
+                } else if (i <= 12) {
+                    colorString += '03';
+                }
             }
 
-            let spliceNumHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
+            // Use actual color count for the count prefix, not hardcoded '0004'
             let countHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
-            let colorValue = '000c' + colorArray.join('') + spliceNumHex + colorString;
-            device.log('colorValue: ' + colorValue);
-            device.log('countHex: ' + countHex + ' spliceNumHex: ' + spliceNumHex);
+            let spliceNumHex = this.getW32FromHex(spliceLength.toString(16), 2).toString(Hex);
+            let colorValue = countHex + colorArray.join('') + spliceNumHex + colorString;
+
             return colorValue;
         }
     }
