@@ -86,3 +86,33 @@ export default class TuyaVirtualDevice extends BaseClass
             const [h1,s1,v1] = this.rgbToHsv(colors[0]);
             let color = this.getW32FromHex(h1.toString(16), 2).toString(Hex) +
                         this.getW32FromHex(parseInt(s1 / 10).toString(16), 1).toString(Hex) +
+                        this.getW32FromHex(parseInt(v1 / 10).toString(16), 1).toString(Hex);
+            return color + "00000100";
+        }
+        else
+        {
+            let colorArray = [];
+            for (let color of colors)
+            {
+                const [h,s,v] = this.rgbToHsv(color);
+                colorArray.push(
+                    this.getW32FromHex(h.toString(16), 2).toString(Hex) +
+                    this.getW32FromHex(s.toString(16), 2).toString(Hex) +
+                    this.getW32FromHex(v.toString(16), 2).toString(Hex)
+                );
+            }
+
+            let colorString = '';
+            for (let i = 1; i <= colors.length; i++)
+            {
+                if (i <= 4)       colorString += '01';
+                else if (i <= 8)  colorString += '02';
+                else if (i <= 12) colorString += '03';
+            }
+
+            let spliceNumHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
+            let colorValue = '0004' + colorArray.join('') + spliceNumHex + colorString;
+            return colorValue;
+        }
+    }
+}
