@@ -28,32 +28,32 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
-        // Grid: 12 wide x 6 tall
-        // 20 LEDs: 5 left + 10 top + 5 right
+        // Grid: 20 wide x 10 tall
+        // 36 LEDs: 9 left + 18 top + 9 right
         // Placed at consecutive integer coordinates so they tile with no gaps.
         //
-        // Left column: x=0, y=5 down to y=1  (5 LEDs)
-        // Top row:     y=0, x=1 through x=10  (10 LEDs)
-        // Right column: x=11, y=1 down to y=5  (5 LEDs)
+        // Left column: x=0, y=9 down to y=1  (9 LEDs)
+        // Top row:     y=0, x=1 through x=18  (18 LEDs)
+        // Right column: x=19, y=1 down to y=9  (9 LEDs)
 
         const positions = [];
 
-        // Left column (5 LEDs): bottom to top at x=0
-        for (let i = 0; i < 5; i++)
+        // Left column (9 LEDs): bottom to top at x=0
+        for (let i = 0; i < 9; i++)
         {
-            positions.push([0, 5 - i]);
+            positions.push([0, 9 - i]);
         }
 
-        // Top row (10 LEDs): left to right at y=0
-        for (let i = 0; i < 10; i++)
+        // Top row (18 LEDs): left to right at y=0
+        for (let i = 0; i < 18; i++)
         {
             positions.push([1 + i, 0]);
         }
 
-        // Right column (5 LEDs): top to bottom at x=11
-        for (let i = 0; i < 5; i++)
+        // Right column (9 LEDs): top to bottom at x=19
+        for (let i = 0; i < 9; i++)
         {
-            positions.push([11, 1 + i]);
+            positions.push([19, 1 + i]);
         }
 
         return positions;
@@ -62,14 +62,14 @@ export default class TuyaVirtualDevice extends BaseClass
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = 20;
+        this.ledCount = 36; // 36 segments (Light Pixel value from device)
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([12, 6]); // grid sized to exactly fit the U-shape with no gaps
+        device.setSize([20, 10]); // grid sized to exactly fit the U-shape with no gaps
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
