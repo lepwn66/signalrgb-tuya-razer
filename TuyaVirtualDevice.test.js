@@ -28,10 +28,37 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
+        // High-resolution grid: 20 wide x 12 tall
+        // LEDs placed at precise points along the U-shape perimeter
+        // so each LED samples a small canvas area instead of a huge block.
+        //
+        // Layout (3 left + 6 top + 3 right = 12 LEDs):
+        //
+        //   L3  T1  T2  T3  T4  T5  T6  R1
+        //   L2                          R2
+        //   L1                          R3
+        //
+        const W = 19; // max x index (grid is 20 wide: 0-19)
+        const H = 11; // max y index (grid is 12 tall: 0-11)
+
         return [
-            [0, 3], [0, 2], [0, 1],                        // left column (3): bottom to top
-            [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], // top row (6): left to right
-            [5, 1], [5, 2], [5, 3]                          // right column (3): top to bottom
+            // Left column (3 LEDs): bottom to top at x=0
+            [0, H],                         // L1 - bottom-left
+            [0, Math.round(H / 2)],         // L2 - mid-left
+            [0, 0],                         // L3 - top-left corner
+
+            // Top row (6 LEDs): left to right at y=0
+            [Math.round(W * 1/7), 0],       // T1
+            [Math.round(W * 2/7), 0],       // T2
+            [Math.round(W * 3/7), 0],       // T3
+            [Math.round(W * 4/7), 0],       // T4
+            [Math.round(W * 5/7), 0],       // T5
+            [Math.round(W * 6/7), 0],       // T6
+
+            // Right column (3 LEDs): top to bottom at x=W
+            [W, 0],                         // R1 - top-right corner
+            [W, Math.round(H / 2)],         // R2 - mid-right
+            [W, H],                         // R3 - bottom-right
         ];
     }
 
@@ -45,7 +72,7 @@ export default class TuyaVirtualDevice extends BaseClass
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([6, 4]); // U-shape bounding box: 6 wide, 4 tall
+        device.setSize([20, 12]); // high-resolution grid for precise color sampling
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
@@ -129,7 +156,7 @@ export default class TuyaVirtualDevice extends BaseClass
                 }
             }
 
-            // Use actual color count for the count prefix, not hardcoded '0004'
+            // Use actual color count for the count prefix
             let countHex = this.getW32FromHex(colors.length.toString(16), 2).toString(Hex);
             let spliceNumHex = this.getW32FromHex(spliceLength.toString(16), 2).toString(Hex);
             let colorValue = countHex + colorArray.join('') + spliceNumHex + colorString;
