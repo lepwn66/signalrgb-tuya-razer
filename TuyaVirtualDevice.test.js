@@ -28,26 +28,27 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
-        // Bottom strip only: 3 LEDs across the bottom edge
-        // Grid: 3 wide x 1 tall — each LED covers a full third of the bottom
-        return [
-            [0, 0],  // left third
-            [1, 0],  // center third
-            [2, 0],  // right third
-        ];
+        // 10 LEDs in a horizontal line along the bottom
+        // Grid: 10 wide x 1 tall
+        const positions = [];
+        for (let i = 0; i < 10; i++)
+        {
+            positions.push([i, 0]);
+        }
+        return positions;
     }
 
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = 3;
+        this.ledCount = 10;
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([3, 1]); // wide cells for smooth bottom-edge averaging
+        device.setSize([10, 1]);
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
@@ -114,7 +115,6 @@ export default class TuyaVirtualDevice extends BaseClass
                 );
             }
 
-            // Each LED gets its own unique segment tag
             let colorString = '';
             for (let i = 1; i <= numLeds; i++)
             {
