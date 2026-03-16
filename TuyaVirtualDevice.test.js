@@ -28,50 +28,26 @@ export default class TuyaVirtualDevice extends BaseClass
 
     getLedPositions()
     {
-        // High-res grid: 20 wide x 10 tall
-        // 12 LEDs in 4 quarters of 3:
-        //   Q1: Left column   (3 LEDs) - bottom, mid, top-left corner
-        //   Q2: Top-left half (3 LEDs) - evenly across left half of top
-        //   Q3: Top-right half(3 LEDs) - evenly across right half of top
-        //   Q4: Right column  (3 LEDs) - top-right corner, mid, bottom
-
-        const W = 19;
-        const H = 9;
-
+        // Bottom strip only: 3 LEDs across the bottom edge
+        // Grid: 3 wide x 1 tall — each LED covers a full third of the bottom
         return [
-            // Q1: Left column - bottom to top
-            [0, H],                          // bottom-left
-            [0, Math.round(H / 2)],          // mid-left
-            [0, 0],                          // top-left corner
-
-            // Q2: Top-left half
-            [Math.round(W / 6), 0],          // ~3
-            [Math.round(W * 2/6), 0],        // ~6
-            [Math.round(W * 3/6), 0],        // ~10 (midpoint)
-
-            // Q3: Top-right half
-            [Math.round(W * 4/6), 0],        // ~13
-            [Math.round(W * 5/6), 0],        // ~16
-            [W, 0],                          // top-right corner
-
-            // Q4: Right column - top to bottom
-            [W, Math.round(H / 3)],          // upper-right
-            [W, Math.round(H * 2/3)],        // lower-right
-            [W, H],                          // bottom-right
+            [0, 0],  // left third
+            [1, 0],  // center third
+            [2, 0],  // right third
         ];
     }
 
     setupDevice(tuyaDevice)
     {
         this.tuyaLeds = DeviceList[tuyaDevice.deviceType].leds;
-        this.ledCount = 12;
+        this.ledCount = 3;
 
         this.ledNames = this.getLedNames();
         this.ledPositions = this.getLedPositions();
 
         device.setName(tuyaDevice.getName());
 
-        device.setSize([20, 10]); // high-res grid for precise sampling
+        device.setSize([3, 1]); // wide cells for smooth bottom-edge averaging
         device.setControllableLeds(this.ledNames, this.ledPositions);
     }
 
